@@ -2,6 +2,7 @@ package com.diegosantos.customfancontroller
 
 import android.content.Context
 import android.graphics.*
+import android.support.annotation.ColorInt
 import android.support.annotation.StringRes
 import android.util.AttributeSet
 import android.view.View
@@ -35,6 +36,14 @@ class DialView @JvmOverloads constructor(
     private var radius = 0.0f                   // Radius of the circle.
     private var fanSpeed = FanSpeed.OFF         // The active selection.
 
+    // Cache AttributeSet
+    @ColorInt
+    private var fanSpeedLowColor = 0
+    @ColorInt
+    private var fanSpeedMediumColor = 0
+    @ColorInt
+    private var fanSpeedMaxColor = 0
+
     // position variable which will be used to draw label and indicator circle position
     private val pointPosition: PointF = PointF(0.0f, 0.0f)
 
@@ -47,6 +56,14 @@ class DialView @JvmOverloads constructor(
 
     init {
         isClickable = true
+
+        /* Get AttributeSet values and cache them */
+        context.obtainStyledAttributes(attrs, R.styleable.DialView).also { typedArray ->
+            fanSpeedLowColor = typedArray.getColor(R.styleable.DialView_fanColor1, 0)
+            fanSpeedMediumColor = typedArray.getColor(R.styleable.DialView_fanColor2, 0)
+            fanSpeedMaxColor = typedArray.getColor(R.styleable.DialView_fanColor3, 0)
+            typedArray.recycle()
+        }
     }
 
     override fun performClick(): Boolean {
@@ -75,7 +92,12 @@ class DialView @JvmOverloads constructor(
         super.onDraw(canvas)
 
         // Set dial background color to green if selection not off
-        paint.color = if (fanSpeed == FanSpeed.OFF) Color.GRAY else Color.GREEN
+        paint.color = when (fanSpeed) {
+            FanSpeed.OFF -> Color.GRAY
+            FanSpeed.LOW -> fanSpeedLowColor
+            FanSpeed.MEDIUM -> fanSpeedMediumColor
+            FanSpeed.HIGH -> fanSpeedMaxColor
+        }
 
         // Draw the dial
         canvas?.drawCircle((width / 2).toFloat(), (height / 2).toFloat(), radius, paint)
