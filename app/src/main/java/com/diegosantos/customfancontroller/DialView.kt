@@ -4,8 +4,12 @@ import android.content.Context
 import android.graphics.*
 import android.support.annotation.ColorInt
 import android.support.annotation.StringRes
+import android.support.v4.view.AccessibilityDelegateCompat
+import android.support.v4.view.ViewCompat
+import android.support.v4.view.accessibility.AccessibilityNodeInfoCompat
 import android.util.AttributeSet
 import android.view.View
+import android.view.accessibility.AccessibilityNodeInfo
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -39,8 +43,10 @@ class DialView @JvmOverloads constructor(
     // Cache AttributeSet
     @ColorInt
     private var fanSpeedLowColor = 0
+
     @ColorInt
     private var fanSpeedMediumColor = 0
+
     @ColorInt
     private var fanSpeedMaxColor = 0
 
@@ -64,14 +70,28 @@ class DialView @JvmOverloads constructor(
             fanSpeedMaxColor = typedArray.getColor(R.styleable.DialView_fanColor3, 0)
             typedArray.recycle()
         }
+
+        updateContentDescription()
+
+        ViewCompat.setAccessibilityDelegate(this, object : AccessibilityDelegateCompat() {
+            override fun onInitializeAccessibilityNodeInfo(
+                host: View?,
+                info: AccessibilityNodeInfoCompat?
+            ) {
+                super.onInitializeAccessibilityNodeInfo(host, info)
+                val customClick = AccessibilityNodeInfoCompat.AccessibilityActionCompat(
+                    AccessibilityNodeInfo.ACTION_CLICK,
+                    context.getString(if (fanSpeed != FanSpeed.HIGH) R.string.change else R.string.reset)
+                )
+                info?.addAction(customClick)
+            }
+        })
     }
 
     override fun performClick(): Boolean {
         if (super.performClick()) return true
-
         fanSpeed = fanSpeed.next()
-        contentDescription = resources.getString(fanSpeed.label)
-
+        updateContentDescription()
         invalidate()
         return true
     }
@@ -115,5 +135,9 @@ class DialView @JvmOverloads constructor(
             val label = resources.getString(i.label)
             canvas?.drawText(label, pointPosition.x, pointPosition.y, paint)
         }
+    }
+
+    private fun updateContentDescription() {
+        contentDescription = resources.getString(fanSpeed.label)
     }
 }
